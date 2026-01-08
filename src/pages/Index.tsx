@@ -1,8 +1,8 @@
 import Header from "@/components/Header";
 import HeroSection from "@/components/HeroSection";
 import FeaturesSection from "@/components/FeaturesSection";
+import SignGallery from "@/components/SignGallery";
 import RecognitionDemo from "@/components/RecognitionDemo";
-import SignDatabase from "@/components/SignDatabase";
 import AboutSection from "@/components/AboutSection";
 import Footer from "@/components/Footer";
 
@@ -13,8 +13,8 @@ const Index = () => {
       <main>
         <HeroSection />
         <FeaturesSection />
+        <SignGallery />
         <RecognitionDemo />
-        <SignDatabase />
         <AboutSection />
       </main>
       <Footer />
