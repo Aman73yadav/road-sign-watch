@@ -34,7 +34,7 @@ const AboutSection = () => {
             </div>
             <h3 className="font-semibold mb-2">Project Team</h3>
             <p className="text-sm text-muted-foreground">
-              Anirudh Poduri under the guidance of Dr. Naga Raju M, Associate Professor
+              Aman Kumar under the guidance of Dr. Naga Raju M, Associate Professor
             </p>
           </div>
 

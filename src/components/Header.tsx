@@ -28,11 +28,11 @@ const Header = () => {
             <a href="#features" className="text-sm text-muted-foreground hover:text-primary transition-colors">
               Features
             </a>
+            <a href="#gallery" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+              Gallery
+            </a>
             <a href="#demo" className="text-sm text-muted-foreground hover:text-primary transition-colors">
               Live Demo
-            </a>
-            <a href="#signs" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-              Sign Database
             </a>
             <a href="#about" className="text-sm text-muted-foreground hover:text-primary transition-colors">
               About
@@ -66,11 +66,11 @@ const Header = () => {
               <a href="#features" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                 Features
               </a>
+              <a href="#gallery" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                Gallery
+              </a>
               <a href="#demo" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                 Live Demo
-              </a>
-              <a href="#signs" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                Sign Database
               </a>
               <a href="#about" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                 About
