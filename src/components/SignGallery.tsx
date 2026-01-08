@@ -2,51 +2,96 @@ import { useState } from "react";
 import { Check, ChevronDown, Loader2, Search, X } from "lucide-react";
 import { Button } from "./ui/button";
 
-// All 43 GTSRB traffic sign categories
+// Import all sign images
+import sign00 from "@/assets/signs/sign-00.png";
+import sign01 from "@/assets/signs/sign-01.png";
+import sign02 from "@/assets/signs/sign-02.png";
+import sign03 from "@/assets/signs/sign-03.png";
+import sign04 from "@/assets/signs/sign-04.png";
+import sign05 from "@/assets/signs/sign-05.png";
+import sign06 from "@/assets/signs/sign-06.png";
+import sign07 from "@/assets/signs/sign-07.png";
+import sign08 from "@/assets/signs/sign-08.png";
+import sign09 from "@/assets/signs/sign-09.png";
+import sign10 from "@/assets/signs/sign-10.png";
+import sign11 from "@/assets/signs/sign-11.png";
+import sign12 from "@/assets/signs/sign-12.png";
+import sign13 from "@/assets/signs/sign-13.png";
+import sign14 from "@/assets/signs/sign-14.png";
+import sign15 from "@/assets/signs/sign-15.png";
+import sign16 from "@/assets/signs/sign-16.png";
+import sign17 from "@/assets/signs/sign-17.png";
+import sign18 from "@/assets/signs/sign-18.png";
+import sign19 from "@/assets/signs/sign-19.png";
+import sign20 from "@/assets/signs/sign-20.png";
+import sign21 from "@/assets/signs/sign-21.png";
+import sign22 from "@/assets/signs/sign-22.png";
+import sign23 from "@/assets/signs/sign-23.png";
+import sign24 from "@/assets/signs/sign-24.png";
+import sign25 from "@/assets/signs/sign-25.png";
+import sign26 from "@/assets/signs/sign-26.png";
+import sign27 from "@/assets/signs/sign-27.png";
+import sign28 from "@/assets/signs/sign-28.png";
+import sign29 from "@/assets/signs/sign-29.png";
+import sign30 from "@/assets/signs/sign-30.png";
+import sign31 from "@/assets/signs/sign-31.png";
+import sign32 from "@/assets/signs/sign-32.png";
+import sign33 from "@/assets/signs/sign-33.png";
+import sign34 from "@/assets/signs/sign-34.png";
+import sign35 from "@/assets/signs/sign-35.png";
+import sign36 from "@/assets/signs/sign-36.png";
+import sign37 from "@/assets/signs/sign-37.png";
+import sign38 from "@/assets/signs/sign-38.png";
+import sign39 from "@/assets/signs/sign-39.png";
+import sign40 from "@/assets/signs/sign-40.png";
+import sign41 from "@/assets/signs/sign-41.png";
+import sign42 from "@/assets/signs/sign-42.png";
+
+// All 43 GTSRB traffic sign categories with actual images
 const gtsrbSigns = [
-  { id: 0, name: "Speed Limit 20", category: "Speed Limit", symbol: "20", color: "bg-red-500" },
-  { id: 1, name: "Speed Limit 30", category: "Speed Limit", symbol: "30", color: "bg-red-500" },
-  { id: 2, name: "Speed Limit 50", category: "Speed Limit", symbol: "50", color: "bg-red-500" },
-  { id: 3, name: "Speed Limit 60", category: "Speed Limit", symbol: "60", color: "bg-red-500" },
-  { id: 4, name: "Speed Limit 70", category: "Speed Limit", symbol: "70", color: "bg-red-500" },
-  { id: 5, name: "Speed Limit 80", category: "Speed Limit", symbol: "80", color: "bg-red-500" },
-  { id: 6, name: "End of 80 Limit", category: "Speed Limit", symbol: "80̶", color: "bg-gray-400" },
-  { id: 7, name: "Speed Limit 100", category: "Speed Limit", symbol: "100", color: "bg-red-500" },
-  { id: 8, name: "Speed Limit 120", category: "Speed Limit", symbol: "120", color: "bg-red-500" },
-  { id: 9, name: "No Passing", category: "Prohibitory", symbol: "⊘", color: "bg-red-500" },
-  { id: 10, name: "No Passing >3.5t", category: "Prohibitory", symbol: "🚛⊘", color: "bg-red-500" },
-  { id: 11, name: "Priority Road", category: "Priority", symbol: "◇", color: "bg-yellow-400" },
-  { id: 12, name: "Yield", category: "Priority", symbol: "△", color: "bg-red-500" },
-  { id: 13, name: "Stop", category: "Priority", symbol: "STOP", color: "bg-red-600" },
-  { id: 14, name: "No Vehicles", category: "Prohibitory", symbol: "⊘", color: "bg-red-500" },
-  { id: 15, name: "No Trucks", category: "Prohibitory", symbol: "🚛", color: "bg-red-500" },
-  { id: 16, name: "No Entry", category: "Prohibitory", symbol: "⊝", color: "bg-red-600" },
-  { id: 17, name: "General Caution", category: "Warning", symbol: "!", color: "bg-yellow-400" },
-  { id: 18, name: "Left Curve", category: "Warning", symbol: "↰", color: "bg-yellow-400" },
-  { id: 19, name: "Right Curve", category: "Warning", symbol: "↱", color: "bg-yellow-400" },
-  { id: 20, name: "Double Curve", category: "Warning", symbol: "⤭", color: "bg-yellow-400" },
-  { id: 21, name: "Bumpy Road", category: "Warning", symbol: "⏦", color: "bg-yellow-400" },
-  { id: 22, name: "Slippery Road", category: "Warning", symbol: "⌇", color: "bg-yellow-400" },
-  { id: 23, name: "Road Narrows Right", category: "Warning", symbol: "⊳", color: "bg-yellow-400" },
-  { id: 24, name: "Road Work", category: "Warning", symbol: "🔧", color: "bg-yellow-400" },
-  { id: 25, name: "Traffic Signals", category: "Warning", symbol: "🚦", color: "bg-yellow-400" },
-  { id: 26, name: "Pedestrians", category: "Warning", symbol: "🚶", color: "bg-yellow-400" },
-  { id: 27, name: "Children Crossing", category: "Warning", symbol: "👧", color: "bg-yellow-400" },
-  { id: 28, name: "Bicycles Crossing", category: "Warning", symbol: "🚲", color: "bg-yellow-400" },
-  { id: 29, name: "Ice/Snow", category: "Warning", symbol: "❄", color: "bg-yellow-400" },
-  { id: 30, name: "Wild Animals", category: "Warning", symbol: "🦌", color: "bg-yellow-400" },
-  { id: 31, name: "End All Limits", category: "Other", symbol: "⊘̶", color: "bg-gray-400" },
-  { id: 32, name: "Turn Right Ahead", category: "Mandatory", symbol: "→", color: "bg-blue-500" },
-  { id: 33, name: "Turn Left Ahead", category: "Mandatory", symbol: "←", color: "bg-blue-500" },
-  { id: 34, name: "Ahead Only", category: "Mandatory", symbol: "↑", color: "bg-blue-500" },
-  { id: 35, name: "Go Straight or Right", category: "Mandatory", symbol: "↗", color: "bg-blue-500" },
-  { id: 36, name: "Go Straight or Left", category: "Mandatory", symbol: "↖", color: "bg-blue-500" },
-  { id: 37, name: "Keep Right", category: "Mandatory", symbol: "⇨", color: "bg-blue-500" },
-  { id: 38, name: "Keep Left", category: "Mandatory", symbol: "⇦", color: "bg-blue-500" },
-  { id: 39, name: "Roundabout", category: "Mandatory", symbol: "↻", color: "bg-blue-500" },
-  { id: 40, name: "End No Passing", category: "Other", symbol: "⊘̶", color: "bg-gray-400" },
-  { id: 41, name: "End No Passing >3.5t", category: "Other", symbol: "🚛̶", color: "bg-gray-400" },
-  { id: 42, name: "Priority for Oncoming", category: "Priority", symbol: "⇅", color: "bg-red-500" },
+  { id: 0, name: "Speed Limit 20", category: "Speed Limit", image: sign00 },
+  { id: 1, name: "Speed Limit 30", category: "Speed Limit", image: sign01 },
+  { id: 2, name: "Speed Limit 50", category: "Speed Limit", image: sign02 },
+  { id: 3, name: "Speed Limit 60", category: "Speed Limit", image: sign03 },
+  { id: 4, name: "Speed Limit 70", category: "Speed Limit", image: sign04 },
+  { id: 5, name: "Speed Limit 80", category: "Speed Limit", image: sign05 },
+  { id: 6, name: "End of 80 Limit", category: "Speed Limit", image: sign06 },
+  { id: 7, name: "Speed Limit 100", category: "Speed Limit", image: sign07 },
+  { id: 8, name: "Speed Limit 120", category: "Speed Limit", image: sign08 },
+  { id: 9, name: "No Passing", category: "Prohibitory", image: sign09 },
+  { id: 10, name: "No Passing >3.5t", category: "Prohibitory", image: sign10 },
+  { id: 11, name: "Priority Road", category: "Priority", image: sign11 },
+  { id: 12, name: "Yield", category: "Priority", image: sign12 },
+  { id: 13, name: "Stop", category: "Priority", image: sign13 },
+  { id: 14, name: "No Vehicles", category: "Prohibitory", image: sign14 },
+  { id: 15, name: "No Trucks", category: "Prohibitory", image: sign15 },
+  { id: 16, name: "No Entry", category: "Prohibitory", image: sign16 },
+  { id: 17, name: "General Caution", category: "Warning", image: sign17 },
+  { id: 18, name: "Left Curve", category: "Warning", image: sign18 },
+  { id: 19, name: "Right Curve", category: "Warning", image: sign19 },
+  { id: 20, name: "Double Curve", category: "Warning", image: sign20 },
+  { id: 21, name: "Bumpy Road", category: "Warning", image: sign21 },
+  { id: 22, name: "Slippery Road", category: "Warning", image: sign22 },
+  { id: 23, name: "Road Narrows Right", category: "Warning", image: sign23 },
+  { id: 24, name: "Road Work", category: "Warning", image: sign24 },
+  { id: 25, name: "Traffic Signals", category: "Warning", image: sign25 },
+  { id: 26, name: "Pedestrians", category: "Warning", image: sign26 },
+  { id: 27, name: "Children Crossing", category: "Warning", image: sign27 },
+  { id: 28, name: "Bicycles Crossing", category: "Warning", image: sign28 },
+  { id: 29, name: "Ice/Snow", category: "Warning", image: sign29 },
+  { id: 30, name: "Wild Animals", category: "Warning", image: sign30 },
+  { id: 31, name: "End All Limits", category: "Other", image: sign31 },
+  { id: 32, name: "Turn Right Ahead", category: "Mandatory", image: sign32 },
+  { id: 33, name: "Turn Left Ahead", category: "Mandatory", image: sign33 },
+  { id: 34, name: "Ahead Only", category: "Mandatory", image: sign34 },
+  { id: 35, name: "Go Straight or Right", category: "Mandatory", image: sign35 },
+  { id: 36, name: "Go Straight or Left", category: "Mandatory", image: sign36 },
+  { id: 37, name: "Keep Right", category: "Mandatory", image: sign37 },
+  { id: 38, name: "Keep Left", category: "Mandatory", image: sign38 },
+  { id: 39, name: "Roundabout", category: "Mandatory", image: sign39 },
+  { id: 40, name: "End No Passing", category: "Other", image: sign40 },
+  { id: 41, name: "End No Passing >3.5t", category: "Other", image: sign41 },
+  { id: 42, name: "Priority for Oncoming", category: "Priority", image: sign42 },
 ];
 
 const categories = ["All", "Speed Limit", "Prohibitory", "Warning", "Mandatory", "Priority", "Other"];
@@ -79,19 +124,6 @@ const SignGallery = ({ onSelectSign }: SignGalleryProps) => {
         onSelectSign(sign);
       }
     }, 800);
-  };
-
-  const getSignShape = (category: string) => {
-    switch (category) {
-      case "Warning":
-        return "clip-triangle";
-      case "Priority":
-        return "clip-diamond";
-      case "Mandatory":
-        return "rounded-full";
-      default:
-        return "rounded-full";
-    }
   };
 
   return (
@@ -173,33 +205,21 @@ const SignGallery = ({ onSelectSign }: SignGalleryProps) => {
         </div>
 
         {/* Sign Grid */}
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-4">
+        <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-9 xl:grid-cols-11 gap-3">
           {filteredSigns.map((sign) => (
             <button
               key={sign.id}
               onClick={() => handleSignClick(sign)}
-              className={`group relative aspect-square rounded-xl glass p-3 hover:border-primary/50 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/10 ${
+              className={`group relative aspect-square rounded-xl glass p-2 hover:border-primary/50 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/10 ${
                 selectedSign === sign.id ? "border-primary ring-2 ring-primary/30" : ""
               }`}
             >
-              {/* Sign Visual */}
-              <div
-                className={`w-full h-full flex items-center justify-center ${sign.color} ${
-                  sign.category === "Warning" ? "rounded-sm rotate-45" : 
-                  sign.category === "Priority" && sign.id === 11 ? "rotate-45 rounded-sm" :
-                  sign.category === "Priority" && sign.id === 12 ? "rounded-t-full" :
-                  "rounded-full"
-                } ${sign.id === 13 ? "!rounded-lg" : ""}`}
-              >
-                <span
-                  className={`text-white font-bold text-xs ${
-                    sign.category === "Warning" ? "-rotate-45" :
-                    sign.category === "Priority" && (sign.id === 11 || sign.id === 12) ? "-rotate-45" : ""
-                  }`}
-                >
-                  {sign.symbol}
-                </span>
-              </div>
+              {/* Sign Image */}
+              <img
+                src={sign.image}
+                alt={sign.name}
+                className="w-full h-full object-contain rounded-lg"
+              />
 
               {/* Loading Overlay */}
               {isAnalyzing && selectedSign === sign.id && (
@@ -239,16 +259,25 @@ const SignGallery = ({ onSelectSign }: SignGalleryProps) => {
         {/* Legend */}
         <div className="mt-12 flex flex-wrap justify-center gap-4">
           {[
-            { label: "Speed Limit", color: "bg-red-500" },
-            { label: "Warning", color: "bg-yellow-400" },
-            { label: "Mandatory", color: "bg-blue-500" },
-            { label: "Prohibitory", color: "bg-red-600" },
-            { label: "Other", color: "bg-gray-400" },
+            { label: "Speed Limit", count: 9 },
+            { label: "Warning", count: 14 },
+            { label: "Mandatory", count: 8 },
+            { label: "Prohibitory", count: 5 },
+            { label: "Priority", count: 4 },
+            { label: "Other", count: 3 },
           ].map((item) => (
-            <div key={item.label} className="flex items-center gap-2">
-              <div className={`w-3 h-3 rounded-full ${item.color}`} />
-              <span className="text-sm text-muted-foreground">{item.label}</span>
-            </div>
+            <button
+              key={item.label}
+              onClick={() => setSelectedCategory(item.label)}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm transition-all ${
+                selectedCategory === item.label
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted/50 text-muted-foreground hover:bg-muted"
+              }`}
+            >
+              <span>{item.label}</span>
+              <span className="text-xs opacity-70">({item.count})</span>
+            </button>
           ))}
         </div>
       </div>
