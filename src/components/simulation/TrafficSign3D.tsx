@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useTexture, Html } from "@react-three/drei";
 import * as THREE from "three";
@@ -9,9 +9,10 @@ interface TrafficSign3DProps {
   signName: string;
   classNumber: number;
   onDetected?: (name: string, classNumber: number) => void;
+  isNightMode: boolean;
 }
 
-const TrafficSign3D = ({ position, signImage, signName, classNumber, onDetected }: TrafficSign3DProps) => {
+const TrafficSign3D = ({ position, signImage, signName, classNumber, onDetected, isNightMode }: TrafficSign3DProps) => {
   const groupRef = useRef<THREE.Group>(null);
   const [isVisible, setIsVisible] = useState(true);
   const [showLabel, setShowLabel] = useState(false);
@@ -59,7 +60,11 @@ const TrafficSign3D = ({ position, signImage, signName, classNumber, onDetected 
       {/* Sign face */}
       <mesh position={[0, 2.8, 0.06]}>
         <planeGeometry args={[1, 1]} />
-        <meshStandardMaterial map={texture} />
+        <meshStandardMaterial 
+          map={texture} 
+          emissive={isNightMode ? "#ffffff" : "#000000"}
+          emissiveIntensity={isNightMode ? 0.3 : 0}
+        />
       </mesh>
       
       {/* Detection glow effect */}
@@ -68,6 +73,11 @@ const TrafficSign3D = ({ position, signImage, signName, classNumber, onDetected 
           <ringGeometry args={[0.55, 0.7, 32]} />
           <meshBasicMaterial color="#00ffff" transparent opacity={0.6} />
         </mesh>
+      )}
+      
+      {/* Night mode sign illumination */}
+      {isNightMode && (
+        <pointLight position={[0, 2.8, 0.5]} intensity={0.5} distance={3} color="#ffcc88" />
       )}
       
       {/* Label */}

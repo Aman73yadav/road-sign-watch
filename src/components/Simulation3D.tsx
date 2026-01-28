@@ -1,5 +1,5 @@
 import { useState, useCallback, lazy, Suspense } from "react";
-import { Play, Pause, RotateCcw, Maximize2, Eye } from "lucide-react";
+import { Play, Pause, RotateCcw, Eye, Sun, Moon } from "lucide-react";
 import { Button } from "./ui/button";
 
 // Lazy load the 3D scene for better performance
@@ -14,6 +14,7 @@ interface Detection {
 
 const Simulation3D = () => {
   const [isRunning, setIsRunning] = useState(true);
+  const [isNightMode, setIsNightMode] = useState(true);
   const [detections, setDetections] = useState<Detection[]>([]);
   const [latestDetection, setLatestDetection] = useState<Detection | null>(null);
 
@@ -53,8 +54,23 @@ const Simulation3D = () => {
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-success animate-pulse" />
                   <span className="text-sm font-medium">Live Simulation</span>
+                  <span className={`text-xs px-2 py-0.5 rounded-full ${isNightMode ? 'bg-blue-500/20 text-blue-400' : 'bg-amber-500/20 text-amber-400'}`}>
+                    {isNightMode ? 'Night' : 'Day'}
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsNightMode(!isNightMode)}
+                    className="gap-1"
+                  >
+                    {isNightMode ? (
+                      <Sun className="w-4 h-4 text-amber-400" />
+                    ) : (
+                      <Moon className="w-4 h-4 text-blue-400" />
+                    )}
+                  </Button>
                   <Button variant="ghost" size="sm" onClick={handleReset}>
                     <RotateCcw className="w-4 h-4" />
                   </Button>
@@ -83,7 +99,7 @@ const Simulation3D = () => {
                     </div>
                   }
                 >
-                  {isRunning && <SimulationScene onDetection={handleDetection} />}
+                  {isRunning && <SimulationScene onDetection={handleDetection} isNightMode={isNightMode} />}
                 </Suspense>
                 
                 {!isRunning && (
@@ -116,7 +132,7 @@ const Simulation3D = () => {
               
               <div className="p-4 border-t border-border">
                 <p className="text-xs text-muted-foreground text-center">
-                  Drag to rotate view • Scroll to zoom • Signs are detected as they approach
+                  Drag to rotate view • Scroll to zoom • Click ☀️/🌙 to toggle day/night
                 </p>
               </div>
             </div>

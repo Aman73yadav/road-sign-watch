@@ -1,6 +1,6 @@
-import { Suspense, useState, useCallback } from "react";
+import { Suspense, useCallback } from "react";
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls, Environment, PerspectiveCamera } from "@react-three/drei";
+import { OrbitControls, PerspectiveCamera, Stars } from "@react-three/drei";
 import RoadScene from "./RoadScene";
 import TrafficSign3D from "./TrafficSign3D";
 
@@ -46,9 +46,10 @@ interface Detection {
 
 interface SimulationSceneProps {
   onDetection: (detection: Detection) => void;
+  isNightMode: boolean;
 }
 
-const SimulationScene = ({ onDetection }: SimulationSceneProps) => {
+const SimulationScene = ({ onDetection, isNightMode }: SimulationSceneProps) => {
   const handleDetection = useCallback((name: string, classNumber: number) => {
     onDetection({
       name,
@@ -58,26 +59,70 @@ const SimulationScene = ({ onDetection }: SimulationSceneProps) => {
     });
   }, [onDetection]);
 
+  // Day/Night theme colors
+  const theme = isNightMode
+    ? {
+        background: "#0a0a15",
+        fog: "#0a0a15",
+        ambient: 0.2,
+        directional: 0.6,
+        ground: "#0d1a0d",
+      }
+    : {
+        background: "#87CEEB",
+        fog: "#87CEEB",
+        ambient: 0.8,
+        directional: 1.2,
+        ground: "#2d5a2d",
+      };
+
   return (
     <Canvas shadows>
       <PerspectiveCamera makeDefault position={[0, 3, 8]} fov={60} />
       
       {/* Lighting */}
-      <ambientLight intensity={0.4} />
+      <ambientLight intensity={theme.ambient} />
       <directionalLight
         position={[10, 20, 10]}
-        intensity={1}
+        intensity={theme.directional}
         castShadow
         shadow-mapSize={[2048, 2048]}
+        color={isNightMode ? "#aaccff" : "#fffaf0"}
       />
-      <pointLight position={[-10, 10, -10]} intensity={0.5} color="#4af" />
+      {isNightMode && (
+        <>
+          <pointLight position={[-10, 10, -10]} intensity={0.3} color="#4af" />
+          <pointLight position={[0, 5, 0]} intensity={0.2} color="#ff6600" />
+        </>
+      )}
+      {!isNightMode && (
+        <hemisphereLight intensity={0.5} color="#87CEEB" groundColor="#2d5a2d" />
+      )}
       
       {/* Sky */}
-      <color attach="background" args={["#0a0a15"]} />
-      <fog attach="fog" args={["#0a0a15", 30, 100]} />
+      <color attach="background" args={[theme.background]} />
+      <fog attach="fog" args={[theme.fog, isNightMode ? 30 : 50, isNightMode ? 100 : 150]} />
+      
+      {/* Stars for night mode */}
+      {isNightMode && (
+        <Stars radius={100} depth={50} count={3000} factor={4} saturation={0} fade speed={1} />
+      )}
+      
+      {/* Sun/Moon */}
+      {!isNightMode ? (
+        <mesh position={[30, 40, -50]}>
+          <sphereGeometry args={[5, 32, 32]} />
+          <meshBasicMaterial color="#fff5d4" />
+        </mesh>
+      ) : (
+        <mesh position={[-20, 30, -40]}>
+          <sphereGeometry args={[3, 32, 32]} />
+          <meshBasicMaterial color="#f0f0ff" />
+        </mesh>
+      )}
       
       <Suspense fallback={null}>
-        <RoadScene />
+        <RoadScene isNightMode={isNightMode} groundColor={theme.ground} />
         
         {signs.map((sign, index) => (
           <TrafficSign3D
@@ -87,6 +132,7 @@ const SimulationScene = ({ onDetection }: SimulationSceneProps) => {
             signName={sign.name}
             classNumber={sign.class}
             onDetected={handleDetection}
+            isNightMode={isNightMode}
           />
         ))}
       </Suspense>
