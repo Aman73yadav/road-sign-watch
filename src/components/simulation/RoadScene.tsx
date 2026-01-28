@@ -2,7 +2,12 @@ import { useRef, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
-const RoadScene = () => {
+interface RoadSceneProps {
+  isNightMode: boolean;
+  groundColor: string;
+}
+
+const RoadScene = ({ isNightMode, groundColor }: RoadSceneProps) => {
   const roadRef = useRef<THREE.Group>(null);
 
   // Create road texture pattern
@@ -12,12 +17,12 @@ const RoadScene = () => {
     canvas.height = 512;
     const ctx = canvas.getContext("2d")!;
     
-    // Road base
-    ctx.fillStyle = "#2a2a2a";
+    // Road base - slightly lighter in day mode
+    ctx.fillStyle = isNightMode ? "#2a2a2a" : "#3a3a3a";
     ctx.fillRect(0, 0, 512, 512);
     
     // Center dashed line
-    ctx.strokeStyle = "#ffffff";
+    ctx.strokeStyle = isNightMode ? "#ffffff" : "#ffffcc";
     ctx.lineWidth = 8;
     ctx.setLineDash([40, 30]);
     ctx.beginPath();
@@ -40,7 +45,7 @@ const RoadScene = () => {
     texture.wrapT = THREE.RepeatWrapping;
     texture.repeat.set(1, 20);
     return texture;
-  }, []);
+  }, [isNightMode]);
 
   // Animate road scrolling
   useFrame((_, delta) => {
@@ -60,11 +65,11 @@ const RoadScene = () => {
       {/* Ground on sides */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-15, -0.02, 0]}>
         <planeGeometry args={[20, 200]} />
-        <meshStandardMaterial color="#1a3d1a" />
+        <meshStandardMaterial color={groundColor} />
       </mesh>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[15, -0.02, 0]}>
         <planeGeometry args={[20, 200]} />
-        <meshStandardMaterial color="#1a3d1a" />
+        <meshStandardMaterial color={groundColor} />
       </mesh>
     </group>
   );
