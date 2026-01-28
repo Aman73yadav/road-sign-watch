@@ -31,6 +31,9 @@ const Header = () => {
             <a href="#gallery" className="text-sm text-muted-foreground hover:text-primary transition-colors">
               Gallery
             </a>
+            <a href="#simulation" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+              3D Simulation
+            </a>
             <a href="#demo" className="text-sm text-muted-foreground hover:text-primary transition-colors">
               Live Demo
             </a>
@@ -68,6 +71,9 @@ const Header = () => {
               </a>
               <a href="#gallery" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                 Gallery
+              </a>
+              <a href="#simulation" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                3D Simulation
               </a>
               <a href="#demo" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                 Live Demo
