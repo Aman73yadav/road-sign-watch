@@ -1,13 +1,8 @@
 import { useCallback, useRef, useState } from "react";
-import { Camera, ImagePlus, Loader2, RotateCcw, Upload, Video, X } from "lucide-react";
+import { Camera, Loader2, RotateCcw, Upload, Video, Zap } from "lucide-react";
 import { Button } from "./ui/button";
-
-interface RecognitionResult {
-  sign: string;
-  confidence: number;
-  category: string;
-  description: string;
-}
+import ImageUploadPanel from "./recognition/ImageUploadPanel";
+import BulkResultsPanel, { ImageResult, RecognitionResult } from "./recognition/BulkResultsPanel";
 
 // Sample traffic sign categories from GTSRB
 const signCategories: Record<string, { name: string; category: string; description: string }> = {
@@ -29,21 +24,26 @@ const RecognitionDemo = () => {
   const [mode, setMode] = useState<"camera" | "upload">("upload");
   const [isProcessing, setIsProcessing] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
-  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
-  const [result, setResult] = useState<RecognitionResult | null>(null);
+  const [cameraResult, setCameraResult] = useState<RecognitionResult | null>(null);
+  
+  // Bulk upload state
+  const [uploadedImages, setUploadedImages] = useState<{ id: string; src: string; name: string }[]>([]);
+  const [imageResults, setImageResults] = useState<ImageResult[]>([]);
+  const [selectedImageId, setSelectedImageId] = useState<string | null>(null);
+  const [processedCount, setProcessedCount] = useState(0);
+  
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  // Simulate AI recognition (in real app, this would call backend API)
+  // Simulate AI recognition
   const simulateRecognition = useCallback((): RecognitionResult => {
     const signs = Object.keys(signCategories);
     const randomSign = signs[Math.floor(Math.random() * signs.length)];
     const signData = signCategories[randomSign];
     return {
       sign: signData.name,
-      confidence: 85 + Math.random() * 14, // 85-99%
+      confidence: 85 + Math.random() * 14,
       category: signData.category,
       description: signData.description,
     };
@@ -72,7 +72,7 @@ const RecognitionDemo = () => {
       streamRef.current = null;
     }
     setIsStreaming(false);
-    setResult(null);
+    setCameraResult(null);
   };
 
   const captureFrame = () => {
@@ -86,37 +86,103 @@ const RecognitionDemo = () => {
       ctx.drawImage(videoRef.current, 0, 0);
     }
 
-    // Simulate processing delay
     setTimeout(() => {
-      setResult(simulateRecognition());
+      setCameraResult(simulateRecognition());
       setIsProcessing(false);
     }, 500);
   };
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  // Bulk upload handlers
+  const handleImagesUpload = (files: FileList) => {
+    const newImages: { id: string; src: string; name: string }[] = [];
+    const newResults: ImageResult[] = [];
+    
+    Array.from(files).forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const id = `img-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        const src = e.target?.result as string;
+        const imageData = { id, src, name: file.name };
+        
+        newImages.push(imageData);
+        newResults.push({
+          id,
+          name: file.name,
+          src,
+          status: "pending",
+          result: null,
+        });
+        
+        // Update state when all files are read
+        if (newImages.length === files.length) {
+          setUploadedImages((prev) => [...prev, ...newImages]);
+          setImageResults((prev) => [...prev, ...newResults]);
+          if (!selectedImageId && newImages.length > 0) {
+            setSelectedImageId(newImages[0].id);
+          }
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+  };
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setUploadedImage(e.target?.result as string);
-      setIsProcessing(true);
+  const handleSelectImage = (id: string) => {
+    setSelectedImageId(id);
+  };
+
+  const handleRemoveImage = (id: string) => {
+    setUploadedImages((prev) => prev.filter((img) => img.id !== id));
+    setImageResults((prev) => prev.filter((r) => r.id !== id));
+    if (selectedImageId === id) {
+      const remaining = uploadedImages.filter((img) => img.id !== id);
+      setSelectedImageId(remaining.length > 0 ? remaining[0].id : null);
+    }
+  };
+
+  const handleClearAll = () => {
+    setUploadedImages([]);
+    setImageResults([]);
+    setSelectedImageId(null);
+    setProcessedCount(0);
+  };
+
+  const processAllImages = async () => {
+    if (imageResults.length === 0) return;
+    
+    setIsProcessing(true);
+    setProcessedCount(0);
+    
+    for (let i = 0; i < imageResults.length; i++) {
+      const item = imageResults[i];
       
-      // Simulate processing
-      setTimeout(() => {
-        setResult(simulateRecognition());
-        setIsProcessing(false);
-      }, 1000);
-    };
-    reader.readAsDataURL(file);
+      // Update status to processing
+      setImageResults((prev) =>
+        prev.map((r) => (r.id === item.id ? { ...r, status: "processing" as const } : r))
+      );
+      
+      // Simulate processing delay
+      await new Promise((resolve) => setTimeout(resolve, 300 + Math.random() * 400));
+      
+      // Update with result
+      const result = simulateRecognition();
+      setImageResults((prev) =>
+        prev.map((r) =>
+          r.id === item.id ? { ...r, status: "complete" as const, result } : r
+        )
+      );
+      setProcessedCount(i + 1);
+    }
+    
+    setIsProcessing(false);
   };
 
   const resetDemo = () => {
-    setUploadedImage(null);
-    setResult(null);
+    handleClearAll();
+    setCameraResult(null);
     stopCamera();
-    if (fileInputRef.current) fileInputRef.current.value = "";
   };
+
+  const hasPendingImages = imageResults.some((r) => r.status === "pending");
 
   return (
     <section id="demo" className="py-24 relative">
@@ -131,7 +197,7 @@ const RecognitionDemo = () => {
             Live <span className="text-gradient-secondary">Detection Demo</span>
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Try our traffic sign recognition system in real-time. Use your camera or upload an image to see the AI in action.
+            Try our traffic sign recognition system. Upload multiple images for bulk analysis or use your camera for real-time detection.
           </p>
         </div>
 
@@ -142,11 +208,11 @@ const RecognitionDemo = () => {
             onClick={() => { setMode("upload"); stopCamera(); }}
           >
             <Upload className="w-4 h-4" />
-            Upload Image
+            Bulk Upload
           </Button>
           <Button
             variant={mode === "camera" ? "glowSecondary" : "glass"}
-            onClick={() => { setMode("camera"); setUploadedImage(null); setResult(null); }}
+            onClick={() => { setMode("camera"); handleClearAll(); }}
           >
             <Video className="w-4 h-4" />
             Live Camera
@@ -158,21 +224,47 @@ const RecognitionDemo = () => {
           <div className="grid md:grid-cols-2 gap-6">
             {/* Input Panel */}
             <div className="glass rounded-2xl p-6 relative overflow-hidden">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold">
-                  {mode === "camera" ? "Camera Feed" : "Image Input"}
-                </h3>
-                {(uploadedImage || isStreaming) && (
-                  <Button variant="ghost" size="sm" onClick={resetDemo}>
-                    <RotateCcw className="w-4 h-4" />
-                    Reset
-                  </Button>
-                )}
-              </div>
+              {mode === "upload" ? (
+                <>
+                  <ImageUploadPanel
+                    images={uploadedImages}
+                    selectedImageId={selectedImageId}
+                    onImagesUpload={handleImagesUpload}
+                    onSelectImage={handleSelectImage}
+                    onRemoveImage={handleRemoveImage}
+                    onClearAll={handleClearAll}
+                  />
+                  
+                  {/* Process button */}
+                  {uploadedImages.length > 0 && hasPendingImages && (
+                    <Button
+                      variant="glow"
+                      className="w-full mt-4"
+                      onClick={processAllImages}
+                      disabled={isProcessing}
+                    >
+                      {isProcessing ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Zap className="w-4 h-4" />
+                      )}
+                      {isProcessing ? "Processing..." : `Analyze ${uploadedImages.length} Image${uploadedImages.length !== 1 ? "s" : ""}`}
+                    </Button>
+                  )}
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-semibold">Camera Feed</h3>
+                    {isStreaming && (
+                      <Button variant="ghost" size="sm" onClick={resetDemo}>
+                        <RotateCcw className="w-4 h-4" />
+                        Reset
+                      </Button>
+                    )}
+                  </div>
 
-              <div className="aspect-video rounded-xl bg-muted/50 border border-border overflow-hidden relative flex items-center justify-center">
-                {mode === "camera" ? (
-                  <>
+                  <div className="aspect-video rounded-xl bg-muted/50 border border-border overflow-hidden relative flex items-center justify-center">
                     <video
                       ref={videoRef}
                       className={`w-full h-full object-cover ${isStreaming ? "block" : "hidden"}`}
@@ -202,113 +294,92 @@ const RecognitionDemo = () => {
                         <div className="absolute bottom-4 right-4 w-8 h-8 border-r-2 border-b-2 border-secondary" />
                       </div>
                     )}
-                  </>
-                ) : (
-                  <>
-                    {uploadedImage ? (
-                      <img
-                        src={uploadedImage}
-                        alt="Uploaded"
-                        className="w-full h-full object-contain"
-                      />
-                    ) : (
-                      <div className="text-center p-8">
-                        <ImagePlus className="w-16 h-16 text-muted-foreground/50 mx-auto mb-4" />
-                        <p className="text-muted-foreground mb-4">No image uploaded</p>
-                        <Button variant="glow" onClick={() => fileInputRef.current?.click()}>
-                          <Upload className="w-4 h-4" />
-                          Choose Image
-                        </Button>
+
+                    {/* Processing overlay */}
+                    {isProcessing && (
+                      <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center">
+                        <div className="text-center">
+                          <Loader2 className="w-12 h-12 text-primary mx-auto mb-4 animate-spin" />
+                          <p className="text-sm text-muted-foreground">Analyzing image...</p>
+                        </div>
                       </div>
                     )}
-                  </>
-                )}
-
-                {/* Processing overlay */}
-                {isProcessing && (
-                  <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center">
-                    <div className="text-center">
-                      <Loader2 className="w-12 h-12 text-primary mx-auto mb-4 animate-spin" />
-                      <p className="text-sm text-muted-foreground">Analyzing image...</p>
-                    </div>
                   </div>
-                )}
-              </div>
 
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleFileUpload}
-              />
-
-              {/* Camera Capture Button */}
-              {isStreaming && (
-                <Button variant="glow" className="w-full mt-4" onClick={captureFrame} disabled={isProcessing}>
-                  <Camera className="w-4 h-4" />
-                  Capture & Analyze
-                </Button>
+                  {isStreaming && (
+                    <Button variant="glow" className="w-full mt-4" onClick={captureFrame} disabled={isProcessing}>
+                      <Camera className="w-4 h-4" />
+                      Capture & Analyze
+                    </Button>
+                  )}
+                </>
               )}
             </div>
 
             {/* Results Panel */}
             <div className="glass rounded-2xl p-6">
-              <h3 className="font-semibold mb-4">Recognition Result</h3>
-
-              {result ? (
-                <div className="space-y-6 animate-fade-in">
-                  {/* Confidence Meter */}
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm text-muted-foreground">Confidence</span>
-                      <span className="text-2xl font-bold text-gradient-primary">
-                        {result.confidence.toFixed(1)}%
-                      </span>
-                    </div>
-                    <div className="h-3 rounded-full bg-muted overflow-hidden">
-                      <div
-                        className="h-full gradient-primary rounded-full transition-all duration-500"
-                        style={{ width: `${result.confidence}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Sign Details */}
-                  <div className="space-y-4">
-                    <div className="p-4 rounded-xl bg-muted/50">
-                      <div className="text-sm text-muted-foreground mb-1">Detected Sign</div>
-                      <div className="text-xl font-semibold">{result.sign}</div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="p-4 rounded-xl bg-muted/50">
-                        <div className="text-sm text-muted-foreground mb-1">Category</div>
-                        <div className="font-medium text-secondary">{result.category}</div>
-                      </div>
-                      <div className="p-4 rounded-xl bg-muted/50">
-                        <div className="text-sm text-muted-foreground mb-1">Status</div>
-                        <div className="font-medium text-success">Verified</div>
-                      </div>
-                    </div>
-
-                    <div className="p-4 rounded-xl bg-muted/50">
-                      <div className="text-sm text-muted-foreground mb-1">Description</div>
-                      <div className="text-sm">{result.description}</div>
-                    </div>
-                  </div>
-                </div>
+              {mode === "upload" ? (
+                <BulkResultsPanel
+                  results={imageResults}
+                  selectedImageId={selectedImageId}
+                  onSelectImage={handleSelectImage}
+                  isProcessing={isProcessing}
+                  processedCount={processedCount}
+                />
               ) : (
-                <div className="h-64 flex flex-col items-center justify-center text-center">
-                  <div className="w-20 h-20 rounded-full bg-muted/50 flex items-center justify-center mb-4">
-                    <Camera className="w-8 h-8 text-muted-foreground/50" />
-                  </div>
-                  <p className="text-muted-foreground">
-                    {mode === "camera"
-                      ? "Start the camera and capture a frame to analyze"
-                      : "Upload an image to see recognition results"}
-                  </p>
-                </div>
+                <>
+                  <h3 className="font-semibold mb-4">Recognition Result</h3>
+                  {cameraResult ? (
+                    <div className="space-y-6 animate-fade-in">
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm text-muted-foreground">Confidence</span>
+                          <span className="text-2xl font-bold text-gradient-primary">
+                            {cameraResult.confidence.toFixed(1)}%
+                          </span>
+                        </div>
+                        <div className="h-3 rounded-full bg-muted overflow-hidden">
+                          <div
+                            className="h-full gradient-primary rounded-full transition-all duration-500"
+                            style={{ width: `${cameraResult.confidence}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        <div className="p-4 rounded-xl bg-muted/50">
+                          <div className="text-sm text-muted-foreground mb-1">Detected Sign</div>
+                          <div className="text-xl font-semibold">{cameraResult.sign}</div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="p-4 rounded-xl bg-muted/50">
+                            <div className="text-sm text-muted-foreground mb-1">Category</div>
+                            <div className="font-medium text-secondary">{cameraResult.category}</div>
+                          </div>
+                          <div className="p-4 rounded-xl bg-muted/50">
+                            <div className="text-sm text-muted-foreground mb-1">Status</div>
+                            <div className="font-medium text-success">Verified</div>
+                          </div>
+                        </div>
+
+                        <div className="p-4 rounded-xl bg-muted/50">
+                          <div className="text-sm text-muted-foreground mb-1">Description</div>
+                          <div className="text-sm">{cameraResult.description}</div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="h-64 flex flex-col items-center justify-center text-center">
+                      <div className="w-20 h-20 rounded-full bg-muted/50 flex items-center justify-center mb-4">
+                        <Camera className="w-8 h-8 text-muted-foreground/50" />
+                      </div>
+                      <p className="text-muted-foreground">
+                        Start the camera and capture a frame to analyze
+                      </p>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>
