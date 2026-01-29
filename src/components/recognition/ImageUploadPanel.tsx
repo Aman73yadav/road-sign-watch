@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useCallback, useRef, useState } from "react";
 import { ImagePlus, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -26,15 +26,56 @@ const ImageUploadPanel = ({
   onClearAll,
 }: ImageUploadPanelProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (files && files.length > 0) {
       onImagesUpload(files);
     }
-    // Reset input so same files can be selected again
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
+
+  const handleDragEnter = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Only set dragging to false if we're leaving the drop zone entirely
+    if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+    setIsDragging(false);
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragging(false);
+
+      const files = e.dataTransfer.files;
+      if (files && files.length > 0) {
+        // Filter to only image files
+        const imageFiles = Array.from(files).filter((file) =>
+          file.type.startsWith("image/")
+        );
+        if (imageFiles.length > 0) {
+          const dataTransfer = new DataTransfer();
+          imageFiles.forEach((file) => dataTransfer.items.add(file));
+          onImagesUpload(dataTransfer.files);
+        }
+      }
+    },
+    [onImagesUpload]
+  );
 
   return (
     <div className="space-y-4">
@@ -49,24 +90,68 @@ const ImageUploadPanel = ({
       </div>
 
       {images.length === 0 ? (
-        <div className="aspect-video rounded-xl bg-muted/50 border border-border overflow-hidden flex items-center justify-center">
+        <div
+          onDragEnter={handleDragEnter}
+          onDragLeave={handleDragLeave}
+          onDragOver={handleDragOver}
+          onDrop={handleDrop}
+          className={`aspect-video rounded-xl border-2 border-dashed overflow-hidden flex items-center justify-center transition-all duration-200 cursor-pointer ${
+            isDragging
+              ? "border-primary bg-primary/10 scale-[1.02]"
+              : "border-border bg-muted/50 hover:border-muted-foreground/50 hover:bg-muted/70"
+          }`}
+          onClick={() => fileInputRef.current?.click()}
+        >
           <div className="text-center p-8">
-            <ImagePlus className="w-16 h-16 text-muted-foreground/50 mx-auto mb-4" />
-            <p className="text-muted-foreground mb-4">No images uploaded</p>
-            <Button variant="glow" onClick={() => fileInputRef.current?.click()}>
-              <Upload className="w-4 h-4" />
-              Choose Images
-            </Button>
-            <p className="text-xs text-muted-foreground mt-2">
-              Select multiple images for bulk analysis
+            <div
+              className={`mx-auto mb-4 transition-transform duration-200 ${
+                isDragging ? "scale-110" : ""
+              }`}
+            >
+              {isDragging ? (
+                <Upload className="w-16 h-16 text-primary mx-auto animate-bounce" />
+              ) : (
+                <ImagePlus className="w-16 h-16 text-muted-foreground/50 mx-auto" />
+              )}
+            </div>
+            <p className={`mb-4 ${isDragging ? "text-primary font-medium" : "text-muted-foreground"}`}>
+              {isDragging ? "Drop images here" : "Drag & drop images here"}
             </p>
+            {!isDragging && (
+              <>
+                <Button variant="glow" onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}>
+                  <Upload className="w-4 h-4" />
+                  Choose Images
+                </Button>
+                <p className="text-xs text-muted-foreground mt-2">
+                  or drop multiple images for bulk analysis
+                </p>
+              </>
+            )}
           </div>
         </div>
       ) : (
         <>
-          {/* Selected image preview */}
-          <div className="aspect-video rounded-xl bg-muted/50 border border-border overflow-hidden relative">
-            {selectedImageId ? (
+          {/* Selected image preview with drop zone */}
+          <div
+            onDragEnter={handleDragEnter}
+            onDragLeave={handleDragLeave}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+            className={`aspect-video rounded-xl border-2 overflow-hidden relative transition-all duration-200 ${
+              isDragging
+                ? "border-primary border-dashed bg-primary/10"
+                : "border-border border-solid bg-muted/50"
+            }`}
+          >
+            {isDragging ? (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="text-center">
+                  <Upload className="w-12 h-12 text-primary mx-auto mb-2 animate-bounce" />
+                  <p className="text-primary font-medium">Drop to add more images</p>
+                </div>
+              </div>
+            ) : selectedImageId ? (
               <img
                 src={images.find((img) => img.id === selectedImageId)?.src}
                 alt="Selected"
