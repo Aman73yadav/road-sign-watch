@@ -1,5 +1,12 @@
-import { Camera, CheckCircle2, Clock, Loader2 } from "lucide-react";
+import { Camera, CheckCircle2, Clock, Download, Loader2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export interface RecognitionResult {
   sign: string;
@@ -39,6 +46,49 @@ const BulkResultsPanel = ({
         completedResults.length
       : 0;
 
+  const exportAsCSV = () => {
+    const headers = ["File Name", "Sign", "Category", "Confidence (%)", "Description"];
+    const rows = completedResults.map((item) => [
+      item.name,
+      item.result?.sign || "",
+      item.result?.category || "",
+      item.result?.confidence.toFixed(2) || "",
+      item.result?.description || "",
+    ]);
+    
+    const csvContent = [
+      headers.join(","),
+      ...rows.map((row) => row.map((cell) => `"${cell}"`).join(",")),
+    ].join("\n");
+    
+    downloadFile(csvContent, "recognition-results.csv", "text/csv");
+  };
+
+  const exportAsJSON = () => {
+    const data = completedResults.map((item) => ({
+      fileName: item.name,
+      sign: item.result?.sign,
+      category: item.result?.category,
+      confidence: item.result?.confidence,
+      description: item.result?.description,
+    }));
+    
+    const jsonContent = JSON.stringify(data, null, 2);
+    downloadFile(jsonContent, "recognition-results.json", "application/json");
+  };
+
+  const downloadFile = (content: string, fileName: string, mimeType: string) => {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   if (results.length === 0) {
     return (
       <div className="h-full flex flex-col items-center justify-center text-center p-8">
@@ -54,7 +104,27 @@ const BulkResultsPanel = ({
 
   return (
     <div className="space-y-4">
-      <h3 className="font-semibold">Recognition Results</h3>
+      <div className="flex items-center justify-between">
+        <h3 className="font-semibold">Recognition Results</h3>
+        {completedResults.length > 0 && !isProcessing && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Download className="w-4 h-4" />
+                Export
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={exportAsCSV}>
+                Export as CSV
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={exportAsJSON}>
+                Export as JSON
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+      </div>
 
       {/* Progress bar for bulk processing */}
       {isProcessing && (
