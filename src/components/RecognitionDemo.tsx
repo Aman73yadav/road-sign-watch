@@ -94,33 +94,40 @@ const RecognitionDemo = () => {
 
   // Bulk upload handlers
   const handleImagesUpload = (files: FileList) => {
+    const fileArray = Array.from(files);
+    let loadedCount = 0;
     const newImages: { id: string; src: string; name: string }[] = [];
     const newResults: ImageResult[] = [];
     
-    Array.from(files).forEach((file) => {
+    fileArray.forEach((file) => {
       const reader = new FileReader();
       reader.onload = (e) => {
         const id = `img-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         const src = e.target?.result as string;
-        const imageData = { id, src, name: file.name };
         
-        newImages.push(imageData);
-        newResults.push({
-          id,
-          name: file.name,
-          src,
-          status: "pending",
-          result: null,
-        });
+        if (src) {
+          newImages.push({ id, src, name: file.name });
+          newResults.push({
+            id,
+            name: file.name,
+            src,
+            status: "pending",
+            result: null,
+          });
+        }
+        
+        loadedCount++;
         
         // Update state when all files are read
-        if (newImages.length === files.length) {
+        if (loadedCount === fileArray.length && newImages.length > 0) {
           setUploadedImages((prev) => [...prev, ...newImages]);
           setImageResults((prev) => [...prev, ...newResults]);
-          if (!selectedImageId && newImages.length > 0) {
-            setSelectedImageId(newImages[0].id);
-          }
+          setSelectedImageId((prev) => prev || newImages[0].id);
         }
+      };
+      reader.onerror = () => {
+        loadedCount++;
+        console.error(`Failed to read file: ${file.name}`);
       };
       reader.readAsDataURL(file);
     });
