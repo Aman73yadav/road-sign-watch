@@ -3,16 +3,14 @@ import { Canvas } from "@react-three/fiber";
 import { OrbitControls, PerspectiveCamera, Stars } from "@react-three/drei";
 import RoadScene from "./RoadScene";
 import TrafficSign3D from "./TrafficSign3D";
+import SpeedBump3D from "./SpeedBump3D";
+import RailwayCrossing3D from "./RailwayCrossing3D";
 
 // Import sign images
-import sign00 from "@/assets/signs/sign-00.png";
 import sign01 from "@/assets/signs/sign-01.png";
 import sign02 from "@/assets/signs/sign-02.png";
 import sign03 from "@/assets/signs/sign-03.png";
-import sign04 from "@/assets/signs/sign-04.png";
-import sign05 from "@/assets/signs/sign-05.png";
 import sign11 from "@/assets/signs/sign-11.png";
-import sign12 from "@/assets/signs/sign-12.png";
 import sign13 from "@/assets/signs/sign-13.png";
 import sign14 from "@/assets/signs/sign-14.png";
 import sign17 from "@/assets/signs/sign-17.png";
@@ -35,6 +33,20 @@ const signs = [
   { image: sign35, name: "Ahead Only", class: 35, position: [4, 0, -180] as [number, number, number] },
   { image: sign11, name: "Right Curve", class: 11, position: [-4, 0, -200] as [number, number, number] },
   { image: sign18, name: "General Caution", class: 18, position: [4, 0, -220] as [number, number, number] },
+];
+
+// Speed bump positions along the road
+const speedBumps: [number, number, number][] = [
+  [0, 0, -30],
+  [0, 0, -90],
+  [0, 0, -150],
+  [0, 0, -210],
+];
+
+// Railway crossing positions
+const railwayCrossings: [number, number, number][] = [
+  [0, 0, -70],
+  [0, 0, -170],
 ];
 
 interface Detection {
@@ -126,12 +138,30 @@ const SimulationScene = ({ onDetection, isNightMode }: SimulationSceneProps) => 
         
         {signs.map((sign, index) => (
           <TrafficSign3D
-            key={index}
+            key={`sign-${index}`}
             position={sign.position}
             signImage={sign.image}
             signName={sign.name}
             classNumber={sign.class}
             onDetected={handleDetection}
+            isNightMode={isNightMode}
+          />
+        ))}
+        
+        {/* Speed bumps */}
+        {speedBumps.map((position, index) => (
+          <SpeedBump3D
+            key={`bump-${index}`}
+            position={position}
+            isNightMode={isNightMode}
+          />
+        ))}
+        
+        {/* Railway crossings */}
+        {railwayCrossings.map((position, index) => (
+          <RailwayCrossing3D
+            key={`railway-${index}`}
+            position={position}
             isNightMode={isNightMode}
           />
         ))}
