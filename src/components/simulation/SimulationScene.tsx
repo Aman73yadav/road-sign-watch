@@ -1,10 +1,13 @@
-import { Suspense, useCallback } from "react";
+import { Suspense, useCallback, useMemo } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, PerspectiveCamera, Stars } from "@react-three/drei";
 import RoadScene from "./RoadScene";
 import TrafficSign3D from "./TrafficSign3D";
 import SpeedBump3D from "./SpeedBump3D";
 import RailwayCrossing3D from "./RailwayCrossing3D";
+import Tree3D from "./Tree3D";
+import Building3D from "./Building3D";
+import StreetLamp3D from "./StreetLamp3D";
 
 // Import sign images
 import sign01 from "@/assets/signs/sign-01.png";
@@ -48,6 +51,50 @@ const railwayCrossings: [number, number, number][] = [
   [0, 0, -70],
   [0, 0, -170],
 ];
+
+// Generate scenery positions
+const generateScenery = () => {
+  const trees: { position: [number, number, number]; type: "pine" | "oak" | "bush"; scale: number }[] = [];
+  const buildings: [number, number, number][] = [];
+  const streetLamps: [number, number, number][] = [];
+  
+  // Generate trees on both sides of the road
+  for (let z = -10; z > -250; z -= 8) {
+    // Left side trees
+    const leftX = -8 - Math.random() * 8;
+    trees.push({
+      position: [leftX, 0, z + Math.random() * 4],
+      type: ["pine", "oak", "bush"][Math.floor(Math.random() * 3)] as "pine" | "oak" | "bush",
+      scale: 0.8 + Math.random() * 0.6,
+    });
+    
+    // Right side trees
+    const rightX = 8 + Math.random() * 8;
+    trees.push({
+      position: [rightX, 0, z + Math.random() * 4],
+      type: ["pine", "oak", "bush"][Math.floor(Math.random() * 3)] as "pine" | "oak" | "bush",
+      scale: 0.8 + Math.random() * 0.6,
+    });
+  }
+  
+  // Generate buildings (less frequent, further from road)
+  for (let z = -25; z > -250; z -= 40) {
+    // Left side buildings
+    buildings.push([-18 - Math.random() * 5, 0, z]);
+    // Right side buildings  
+    buildings.push([18 + Math.random() * 5, 0, z + 20]);
+  }
+  
+  // Generate street lamps along the road
+  for (let z = -15; z > -250; z -= 25) {
+    streetLamps.push([-6, 0, z]);
+    streetLamps.push([6, 0, z + 12]);
+  }
+  
+  return { trees, buildings, streetLamps };
+};
+
+const scenery = generateScenery();
 
 interface Detection {
   name: string;
@@ -161,6 +208,35 @@ const SimulationScene = ({ onDetection, isNightMode }: SimulationSceneProps) => 
         {railwayCrossings.map((position, index) => (
           <RailwayCrossing3D
             key={`railway-${index}`}
+            position={position}
+            isNightMode={isNightMode}
+          />
+        ))}
+        
+        {/* Trees */}
+        {scenery.trees.map((tree, index) => (
+          <Tree3D
+            key={`tree-${index}`}
+            position={tree.position}
+            treeType={tree.type}
+            scale={tree.scale}
+            isNightMode={isNightMode}
+          />
+        ))}
+        
+        {/* Buildings */}
+        {scenery.buildings.map((position, index) => (
+          <Building3D
+            key={`building-${index}`}
+            position={position}
+            isNightMode={isNightMode}
+          />
+        ))}
+        
+        {/* Street lamps */}
+        {scenery.streetLamps.map((position, index) => (
+          <StreetLamp3D
+            key={`lamp-${index}`}
             position={position}
             isNightMode={isNightMode}
           />
